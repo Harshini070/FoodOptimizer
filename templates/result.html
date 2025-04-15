@@ -4,14 +4,34 @@
     <meta charset="UTF-8">
     <title>Optimization Result</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f7fa;
+        }
+
+        h3 {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .explanation {
+            background-color: #eef2f7;
+            border-left: 5px solid #0dcaf0;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
-    <h3 class="mb-4">🚚 Optimized Food Distribution</h3>
+    <h3 class="mb-4 text-center">🚚 Optimized Food Distribution</h3>
 
     {% if result and result != 'Optimization failed!' and not result|stringformat:"s"|slice:":5" == "Error" %}
-        <table class="table table-bordered">
-            <thead>
+        <table class="table table-bordered table-hover bg-white shadow-sm">
+            <thead class="table-light">
                 <tr>
                     <th>From / To</th>
                     {% for j in result.0 %}
@@ -32,25 +52,53 @@
         </table>
 
         {% if total_cost %}
-            <p><strong>Total Transportation Cost:</strong> ₹{{ total_cost }}</p>
+            <p class="fw-bold fs-5">Total Transportation Cost: ₹{{ total_cost }}</p>
         {% endif %}
 
         <form method="post" action="{% url 'download_csv' %}">
             {% csrf_token %}
             <input type="hidden" name="csv_data" value="{{ result|safe }}">
             <input type="hidden" name="total_cost" value="{{ total_cost }}">
-            <button type="submit" class="btn btn-success">Download CSV</button>
+            <button type="submit" class="btn btn-success mb-3">Download CSV</button>
         </form>
     {% else %}
         <div class="alert alert-danger mt-3">{{ result }}</div>
     {% endif %}
 
-    <!-- Explanation Section below the result table -->
+    <!-- Toggleable Explanation -->
+    <div class="mt-4">
+        <button class="btn btn-info" onclick="toggleExplanation()">Show Explanation</button>
 
+        <div id="explanationBox" class="mt-3 p-4 explanation rounded" style="display: none;">
+            <h5>📊 Result Explanation</h5>
+            <p>This table shows the <strong>optimized food distribution</strong> plan that minimizes the total transportation cost based on your input.</p>
+            <ul>
+                <li>Each row represents a <strong>distribution center</strong>.</li>
+                <li>Each column represents a <strong>shelter</strong>.</li>
+                <li>The values indicate the <strong>units of food</strong> delivered from each center to each shelter.</li>
+                <li><code>-0.0</code> values can be considered as <code>0.0</code> (rounding error).</li>
+            </ul>
+        </div>
+    </div>
 
     <div class="mt-4">
         <a href="{% url 'input_view' %}" class="btn btn-secondary">← Back</a>
     </div>
 </div>
+
+<script>
+    function toggleExplanation() {
+        const box = document.getElementById('explanationBox');
+        const btn = event.target;
+
+        if (box.style.display === 'none') {
+            box.style.display = 'block';
+            btn.textContent = 'Hide Explanation';
+        } else {
+            box.style.display = 'none';
+            btn.textContent = 'Show Explanation';
+        }
+    }
+</script>
 </body>
 </html>
