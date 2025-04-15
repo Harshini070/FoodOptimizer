@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-x2j(w$p-s&$b@2jm1l^ko!^u7@2tc6eak0^ke*h3jhc+5gpdm!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['FoodOptimizer-1.onrender.com','127.0.0.1']
 
