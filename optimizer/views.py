@@ -12,7 +12,9 @@ import json
 def input_view(request):
     return render(request, 'index.html')
 
-# Handle form submission and show result
+
+
+
 def optimize_distribution(request):
     if request.method == 'POST':
         try:
@@ -61,7 +63,7 @@ def optimize_distribution(request):
                 total_cost = None
 
             return render(request, 'result.html', {
-                'result': result,
+                'optimized_matrix': result,
                 'total_cost': total_cost
             })
 
@@ -69,6 +71,7 @@ def optimize_distribution(request):
             return render(request, 'result.html', {'result': f"Error: {str(e)}"})
 
     return redirect('input_view')
+
 
 
 @csrf_exempt
@@ -90,3 +93,14 @@ def download_csv(request):
         response = HttpResponse(buffer.getvalue(), content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=optimized_distribution.csv'
         return response
+
+
+# views.py
+def result_view(request):
+    # Assuming you have the result data in a variable `optimized_data`
+    optimized_data = [
+        [120, 130, 140, 150],
+        [100, 110, 120, 130],
+        [90, 100, 110, 120],
+    ]
+    return render(request, 'result.html', {'optimized_data': optimized_data})

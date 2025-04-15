@@ -1,133 +1,142 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <title>Food Distribution Optimizer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
     <style>
         body {
-            background: linear-gradient(to right, #e3f2fd, #fdfbfb);
             font-family: 'Poppins', sans-serif;
         }
 
-        .container {
-            max-width: 850px;
-            margin-top: 40px;
-        }
-
-        .card {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            background-color: #fff;
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: bold;
+        .hero {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: white;
+            padding: 80px 20px;
             text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .form-control, .btn {
-            margin-bottom: 15px;
-        }
-
-        .matrix-wrapper {
-            overflow-x: auto;
-        }
-
-        table input {
-            width: 80px;
-            text-align: center;
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 0.9rem;
-            color: gray;
-            margin-top: 20px;
         }
 
         .btn-custom {
             border-radius: 30px;
         }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .dark-mode-icon {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="card">
-        <h1>🍱 Food Distribution Optimizer</h1>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">🍱 Food Optimizer</a>
+        <div class="ms-auto">
+            <button id="themeToggle" class="btn btn-outline-light btn-sm dark-mode-icon">🌙</button>
+        </div>
+    </div>
+</nav>
 
+<section class="hero">
+    <div class="container">
+        <h1 data-aos="fade-up">Efficient Food Distribution</h1>
+        <p data-aos="fade-up" data-aos-delay="100">Minimize transport cost & help communities get food faster.</p>
+        <button class="btn btn-light btn-custom mt-3" data-bs-toggle="modal" data-bs-target="#exampleModal">📋 See Example</button>
+    </div>
+</section>
+
+<div class="container mt-5">
+    <div class="card" data-aos="fade-up">
         <form method="post" action="{% url 'optimize' %}">
             {% csrf_token %}
-
-            <label for="numCenters" class="form-label"><strong>Number of Food Supply Centers:</strong></label>
+            <label class="form-label">Number of Centers:</label>
             <input type="number" id="numCenters" class="form-control" min="1" value="3" required>
 
-            <label for="numShelters" class="form-label"><strong>Number of Relief Shelters:</strong></label>
+            <label class="form-label">Number of Shelters:</label>
             <input type="number" id="numShelters" class="form-control" min="1" value="3" required>
 
-            <div class="d-grid">
-                <button type="button" onclick="generateMatrix()" class="btn btn-info btn-custom">➕ Generate Cost Matrix</button>
-            </div>
+            <button type="button" onclick="generateMatrix()" class="btn btn-info btn-custom mt-3 w-100">➕ Generate Matrix</button>
 
             <div id="matrixSection" style="display: none;" class="mt-4">
-                <p><strong>Enter Transportation Costs (from each center to each shelter):</strong></p>
-                <div id="matrixInputs" class="matrix-wrapper mb-3"></div>
+                <div id="matrixInputs" class="table-responsive mb-3"></div>
 
-                <label for="supply" class="form-label"><strong>Supply at each center (comma-separated):</strong></label>
-                <textarea id="supply" name="supply" class="form-control" placeholder="e.g., 20,30,25" required></textarea>
+                <label class="form-label">The amount of food (e.g., meals, kg, boxes) available at each center(comma-separated):</label>
+                <textarea id="supply" name="supply" class="form-control" required></textarea>
 
-                <label for="demand" class="form-label mt-3"><strong>Demand at each shelter (comma-separated):</strong></label>
-                <textarea id="demand" name="demand" class="form-control" placeholder="e.g., 10,30,20,15" required></textarea>
+                <label class="form-label mt-3">The amount of food needed at each shelter(comma-separated):</label>
+                <textarea id="demand" name="demand" class="form-control" required></textarea>
 
                 <input type="hidden" id="cost_matrix" name="cost_matrix">
             </div>
 
-            <div class="d-flex justify-content-between flex-wrap gap-2 mt-4">
-                <button type="submit" class="btn btn-success btn-custom flex-fill">🚀 Optimize</button>
-                <button type="button" onclick="resetForm()" class="btn btn-secondary btn-custom flex-fill">🔄 Reset</button>
-                <button type="button" onclick="prefillExample()" class="btn btn-warning btn-custom flex-fill">📋 Load Example</button>
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-success btn-custom">🚀 Optimize</button>
+                <button type="button" onclick="resetForm()" class="btn btn-secondary btn-custom">🔄 Reset</button>
             </div>
         </form>
-
-        <div class="footer mt-4">
-            Built with ❤️ to reduce food transportation costs and help the needy.
-        </div>
     </div>
 </div>
 
+<!-- Modal for Example -->
+<div class="modal fade" id="exampleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📋 Example Input</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Preload example transportation costs, supply and demand to see how it works!</p>
+        <ul>
+            <li>Centers: 3</li>
+            <li>Shelters: 4</li>
+            <li>Cost Matrix: 3x4</li>
+            <li>Supply: 20, 30, 25</li>
+            <li>Demand: 10, 30, 20, 15</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="prefillExample(); bootstrap.Modal.getInstance(document.getElementById('exampleModal')).hide()" class="btn btn-primary">Load Example</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="text-center mt-5 text-muted mb-3">Built to reduce food transport cost ❤️</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
+    AOS.init();
+
     function generateMatrix() {
+        const rows = +document.getElementById('numCenters').value;
+        const cols = +document.getElementById('numShelters').value;
         const container = document.getElementById('matrixInputs');
         container.innerHTML = '';
 
-        const rows = parseInt(document.getElementById('numCenters').value);
-        const cols = parseInt(document.getElementById('numShelters').value);
-        if (!rows || !cols) return;
-
-        let table = document.createElement('table');
-        table.className = 'table table-bordered table-hover';
-
-        let thead = table.insertRow();
-        thead.insertCell().outerHTML = "<th>Center \\ Shelter</th>";
-        for (let j = 0; j < cols; j++) {
-            thead.insertCell().outerHTML = `<th>Shelter ${j + 1}</th>`;
-        }
+        let table = `<table class="table table-bordered"><thead><tr><th>Center \\ Shelter</th>`;
+        for (let j = 0; j < cols; j++) table += `<th>Shelter ${j+1}</th>`;
+        table += `</tr></thead><tbody>`;
 
         for (let i = 0; i < rows; i++) {
-            let row = table.insertRow();
-            row.insertCell().outerHTML = `<th>Center ${i + 1}</th>`;
+            table += `<tr><th>Center ${i+1}</th>`;
             for (let j = 0; j < cols; j++) {
-                let cell = row.insertCell();
-                cell.innerHTML = `<input type="number" min="0" id="cell-${i}-${j}" class="form-control" required>`;
+                table += `<td><input type="number" min="0" id="cell-${i}-${j}" class="form-control" required></td>`;
             }
+            table += `</tr>`;
         }
 
-        container.appendChild(table);
+        table += `</tbody></table>`;
+        container.innerHTML = table;
         document.getElementById('matrixSection').style.display = 'block';
     }
 
@@ -135,21 +144,10 @@
         document.getElementById('numCenters').value = 3;
         document.getElementById('numShelters').value = 4;
         generateMatrix();
-
-        const example = [
-            [8, 6, 10, 9],
-            [9, 12, 13, 7],
-            [14, 9, 16, 5]
-        ];
-
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 4; j++) {
-                document.getElementById(`cell-${i}-${j}`).value = example[i][j];
-            }
-        }
-
-        document.getElementById('supply').value = '20,30,25';
-        document.getElementById('demand').value = '10,30,20,15';
+        const data = [[8,6,10,9],[9,12,13,7],[14,9,16,5]];
+        data.forEach((row, i) => row.forEach((val, j) => document.getElementById(`cell-${i}-${j}`).value = val));
+        document.getElementById('supply').value = "20,30,25";
+        document.getElementById('demand').value = "10,30,20,15";
     }
 
     function resetForm() {
@@ -159,8 +157,8 @@
     }
 
     document.querySelector("form").addEventListener("submit", function (e) {
-        const rows = parseInt(document.getElementById('numCenters').value);
-        const cols = parseInt(document.getElementById('numShelters').value);
+        const rows = +document.getElementById('numCenters').value;
+        const cols = +document.getElementById('numShelters').value;
         const matrix = [];
 
         for (let i = 0; i < rows; i++) {
@@ -172,6 +170,12 @@
         }
 
         document.getElementById('cost_matrix').value = JSON.stringify(matrix);
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+        const html = document.documentElement;
+        const theme = html.getAttribute("data-bs-theme");
+        html.setAttribute("data-bs-theme", theme === "light" ? "dark" : "light");
     });
 </script>
 </body>

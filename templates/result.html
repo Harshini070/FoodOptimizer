@@ -1,136 +1,176 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
-    <title>Optimization Result</title>
+    <title>Optimized Distribution Results</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
     <style>
         body {
-            background: linear-gradient(to right, #e3f2fd, #fdfbfb);
             font-family: 'Poppins', sans-serif;
         }
 
-        .card {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-        }
-
-        .table {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .hero {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
         }
 
         .btn-custom {
             border-radius: 30px;
         }
 
-        .cost-highlight {
-            font-size: 1.2rem;
-            background-color: #e3f2fd;
-            border-left: 5px solid #0d6efd;
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            padding: 30px;
         }
 
-        .explanation {
-            display: none;
+        .dark-mode-icon {
+            cursor: pointer;
         }
 
-        .tooltip-inner {
-            max-width: 300px;
-            padding: 8px 10px;
-            font-size: 0.9rem;
+        .chart-container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
-<div class="container mt-5">
-    <div class="card p-4 bg-white">
-        <h3 class="mb-4 text-center">🚚 Optimized Food Distribution</h3>
-
-        {% if result and result != 'Optimization failed!' and not result|stringformat:"s"|slice:":5" == "Error" %}
-
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>From / To</th>
-                            {% for j in result.0 %}
-                                <th data-bs-toggle="tooltip" title="Relief Shelter {{ forloop.counter }}">Shelter {{ forloop.counter }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in result %}
-                            <tr>
-                                <th data-bs-toggle="tooltip" title="Food Center {{ forloop.counter }}">Center {{ forloop.counter }}</th>
-                                {% for val in row %}
-                                    <td>{{ val }}</td>
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            {% if total_cost %}
-                <div class="alert cost-highlight text-center mt-3">
-                    ✅ <strong>Total Transportation Cost:</strong> ₹{{ total_cost }}
-                </div>
-            {% endif %}
-
-            <form method="post" action="{% url 'download_csv' %}" class="text-center mt-3">
-                {% csrf_token %}
-                <input type="hidden" name="csv_data" value="{{ result|safe }}">
-                <input type="hidden" name="total_cost" value="{{ total_cost }}">
-                <button type="submit" class="btn btn-success btn-custom px-4">📥 Download CSV</button>
-            </form>
-
-            <div class="text-center mt-4">
-                <button class="btn btn-outline-primary btn-custom" onclick="toggleExplanation()">📊 Show Explanation</button>
-            </div>
-
-            <div id="explanation" class="explanation mt-4 p-4 border rounded bg-light text-dark">
-                <h5>📌 Result Explanation</h5>
-                <p>This table shows the <strong>optimized food distribution</strong> plan that minimizes the total transportation cost based on your input.</p>
-                <ul>
-                    <li>Each row corresponds to a <strong>distribution center</strong>.</li>
-                    <li>Each column corresponds to a <strong>shelter</strong>.</li>
-                    <li>The values inside the table represent the <strong>amount of food (in units)</strong> to be delivered from a center to a shelter.</li>
-                </ul>
-                <p>The optimization algorithm ensures that:</p>
-                <ul>
-                    <li><strong>All supply and demand constraints are satisfied</strong>.</li>
-                    <li><strong>Total transportation cost is minimized</strong>.</li>
-                    <li>Any value like <code>-0.0</code> is a rounding artifact and can be treated as <code>0.0</code>.</li>
-                </ul>
-                <p><strong>Total Cost:</strong> ₹{{ total_cost }}</p>
-            </div>
-
-        {% else %}
-            <div class="alert alert-danger mt-3 text-center">{{ result }}</div>
-        {% endif %}
-
-        <div class="text-center mt-4">
-            <a href="{% url 'input_view' %}" class="btn btn-secondary btn-custom px-4">← Back</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">🍱 Food Optimizer</a>
+        <div class="ms-auto">
+            <button id="themeToggle" class="btn btn-outline-light btn-sm dark-mode-icon">🌙</button>
         </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <h1 data-aos="fade-up">Optimized Distribution Results</h1>
+        <p data-aos="fade-up" data-aos-delay="100">The optimal food distribution plan has been calculated!</p>
+        <a href="{% url 'input_view' %}" class="btn btn-light btn-custom mt-3">🔙 Back to Input</a>
+    </div>
+</section>
+
+<div class="container mt-5">
+    <div class="card" data-aos="fade-up">
+        <h3 class="text-center">Optimal Distribution Matrix</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Center</th>
+                        {% for i in optimized_matrix.0 %}
+                            <th>Shelter {{ forloop.counter }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in optimized_matrix %}
+                    <tr>
+                        <td>Center {{ forloop.counter }}</td>
+                        {% for value in row %}
+                        <td>{{ value|floatformat:2 }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4" data-aos="fade-up">
+        <h4 class="text-center">Optimized Total Transportation Cost</h4>
+        <p class="text-center" style="font-size: 1.5rem; font-weight: bold;">$ {{ total_cost|floatformat:2 }}</p>
+    </div>
+
+    <div class="chart-container mt-5" data-aos="fade-up">
+        <h4 class="text-center">Transportation Costs Visualization</h4>
+        <canvas id="distributionChart"></canvas>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function toggleExplanation() {
-        const section = document.getElementById("explanation");
-        section.style.display = section.style.display === "none" || section.style.display === "" ? "block" : "none";
-    }
+<footer class="text-center mt-5 text-muted mb-3">Built to reduce food transport cost ❤️</footer>
 
-    // Enable tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
+<!-- Matrix as JSON for JavaScript -->
+{{ optimized_matrix|json_script:"optimizedMatrix" }}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    AOS.init();
+
+    // ✅ Load optimized matrix from Django context
+    const matrix = JSON.parse(document.getElementById('optimizedMatrix').textContent);
+
+    // ✅ Transpose and sum columns to get food sent to each shelter
+    const shelterSums = matrix[0].map((_, colIndex) =>
+        matrix.reduce((sum, row) => sum + row[colIndex], 0)
+    );
+
+    // ✅ Dynamically generate shelter labels
+    const shelterLabels = matrix[0].map((_, index) => `Shelter ${index + 1}`);
+
+    // ✅ Chart.js data setup
+    const data = {
+        labels: shelterLabels,
+        datasets: [{
+            label: 'Total Food Sent to Each Shelter',
+            data: shelterSums,
+            backgroundColor: ['#00c6ff', '#0072ff', '#3f51b5', '#5c6bc0', '#3949ab', '#1a237e'],
+            borderColor: ['#0072ff', '#005bb5', '#303f9f', '#283593', '#1a237e', '#0d47a1'],
+            borderWidth: 1
+        }]
+    };
+
+    const config = {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                title: {
+                    display: true,
+                    text: 'Food Distributed to Each Shelter'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Food Units'
+                    }
+                }
+            }
+        }
+    };
+
+    const ctx = document.getElementById('distributionChart').getContext('2d');
+    const distributionChart = new Chart(ctx, config);
+
+    // ✅ Dark/Light mode toggle
+    document.getElementById("themeToggle").addEventListener("click", () => {
+        const html = document.documentElement;
+        const theme = html.getAttribute("data-bs-theme");
+        html.setAttribute("data-bs-theme", theme === "light" ? "dark" : "light");
+    });
 </script>
 </body>
 </html>
