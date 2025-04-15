@@ -4,101 +4,133 @@
     <meta charset="UTF-8">
     <title>Optimization Result</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #f5f7fa;
+            background: linear-gradient(to right, #e3f2fd, #fdfbfb);
+            font-family: 'Poppins', sans-serif;
         }
 
-        h3 {
-            font-weight: 600;
-            color: #2c3e50;
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
         }
 
-        .table th, .table td {
-            text-align: center;
-            vertical-align: middle;
+        .table {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-custom {
+            border-radius: 30px;
+        }
+
+        .cost-highlight {
+            font-size: 1.2rem;
+            background-color: #e3f2fd;
+            border-left: 5px solid #0d6efd;
         }
 
         .explanation {
-            background-color: #eef2f7;
-            border-left: 5px solid #0dcaf0;
+            display: none;
+        }
+
+        .tooltip-inner {
+            max-width: 300px;
+            padding: 8px 10px;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 <div class="container mt-5">
-    <h3 class="mb-4 text-center">🚚 Optimized Food Distribution</h3>
+    <div class="card p-4 bg-white">
+        <h3 class="mb-4 text-center">🚚 Optimized Food Distribution</h3>
 
-    {% if result and result != 'Optimization failed!' and not result|stringformat:"s"|slice:":5" == "Error" %}
-        <table class="table table-bordered table-hover bg-white shadow-sm">
-            <thead class="table-light">
-                <tr>
-                    <th>From / To</th>
-                    {% for j in result.0 %}
-                        <th>Shelter {{ forloop.counter }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in result %}
-                    <tr>
-                        <th>Center {{ forloop.counter }}</th>
-                        {% for val in row %}
-                            <td>{{ val }}</td>
+        {% if result and result != 'Optimization failed!' and not result|stringformat:"s"|slice:":5" == "Error" %}
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>From / To</th>
+                            {% for j in result.0 %}
+                                <th data-bs-toggle="tooltip" title="Relief Shelter {{ forloop.counter }}">Shelter {{ forloop.counter }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in result %}
+                            <tr>
+                                <th data-bs-toggle="tooltip" title="Food Center {{ forloop.counter }}">Center {{ forloop.counter }}</th>
+                                {% for val in row %}
+                                    <td>{{ val }}</td>
+                                {% endfor %}
+                            </tr>
                         {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </tbody>
+                </table>
+            </div>
 
-        {% if total_cost %}
-            <p class="fw-bold fs-5">Total Transportation Cost: ₹{{ total_cost }}</p>
+            {% if total_cost %}
+                <div class="alert cost-highlight text-center mt-3">
+                    ✅ <strong>Total Transportation Cost:</strong> ₹{{ total_cost }}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'download_csv' %}" class="text-center mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="csv_data" value="{{ result|safe }}">
+                <input type="hidden" name="total_cost" value="{{ total_cost }}">
+                <button type="submit" class="btn btn-success btn-custom px-4">📥 Download CSV</button>
+            </form>
+
+            <div class="text-center mt-4">
+                <button class="btn btn-outline-primary btn-custom" onclick="toggleExplanation()">📊 Show Explanation</button>
+            </div>
+
+            <div id="explanation" class="explanation mt-4 p-4 border rounded bg-light text-dark">
+                <h5>📌 Result Explanation</h5>
+                <p>This table shows the <strong>optimized food distribution</strong> plan that minimizes the total transportation cost based on your input.</p>
+                <ul>
+                    <li>Each row corresponds to a <strong>distribution center</strong>.</li>
+                    <li>Each column corresponds to a <strong>shelter</strong>.</li>
+                    <li>The values inside the table represent the <strong>amount of food (in units)</strong> to be delivered from a center to a shelter.</li>
+                </ul>
+                <p>The optimization algorithm ensures that:</p>
+                <ul>
+                    <li><strong>All supply and demand constraints are satisfied</strong>.</li>
+                    <li><strong>Total transportation cost is minimized</strong>.</li>
+                    <li>Any value like <code>-0.0</code> is a rounding artifact and can be treated as <code>0.0</code>.</li>
+                </ul>
+                <p><strong>Total Cost:</strong> ₹{{ total_cost }}</p>
+            </div>
+
+        {% else %}
+            <div class="alert alert-danger mt-3 text-center">{{ result }}</div>
         {% endif %}
 
-        <form method="post" action="{% url 'download_csv' %}">
-            {% csrf_token %}
-            <input type="hidden" name="csv_data" value="{{ result|safe }}">
-            <input type="hidden" name="total_cost" value="{{ total_cost }}">
-            <button type="submit" class="btn btn-success mb-3">Download CSV</button>
-        </form>
-    {% else %}
-        <div class="alert alert-danger mt-3">{{ result }}</div>
-    {% endif %}
-
-    <!-- Toggleable Explanation -->
-    <div class="mt-4">
-        <button class="btn btn-info" onclick="toggleExplanation()">Show Explanation</button>
-
-        <div id="explanationBox" class="mt-3 p-4 explanation rounded" style="display: none;">
-            <h5>📊 Result Explanation</h5>
-            <p>This table shows the <strong>optimized food distribution</strong> plan that minimizes the total transportation cost based on your input.</p>
-            <ul>
-                <li>Each row represents a <strong>distribution center</strong>.</li>
-                <li>Each column represents a <strong>shelter</strong>.</li>
-                <li>The values indicate the <strong>units of food</strong> delivered from each center to each shelter.</li>
-                <li><code>-0.0</code> values can be considered as <code>0.0</code> (rounding error).</li>
-            </ul>
+        <div class="text-center mt-4">
+            <a href="{% url 'input_view' %}" class="btn btn-secondary btn-custom px-4">← Back</a>
         </div>
-    </div>
-
-    <div class="mt-4">
-        <a href="{% url 'input_view' %}" class="btn btn-secondary">← Back</a>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function toggleExplanation() {
-        const box = document.getElementById('explanationBox');
-        const btn = event.target;
-
-        if (box.style.display === 'none') {
-            box.style.display = 'block';
-            btn.textContent = 'Hide Explanation';
-        } else {
-            box.style.display = 'none';
-            btn.textContent = 'Show Explanation';
-        }
+        const section = document.getElementById("explanation");
+        section.style.display = section.style.display === "none" || section.style.display === "" ? "block" : "none";
     }
+
+    // Enable tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
 </script>
 </body>
 </html>
