@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Food Distribution Optimizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 800px;
+            margin-top: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-control, .btn {
+            margin-bottom: 15px;
+        }
+
+        table input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.9rem;
+            color: gray;
+            margin-top: 20px;
+        }
+
+        .matrix-wrapper {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🍱 Food Distribution Optimizer</h1>
+
+    <form method="post" action="{% url 'optimize' %}">
+        {% csrf_token %}
+
+        <label for="numCenters"><strong>Number of Food Supply Centers:</strong></label>
+        <input type="number" id="numCenters" class="form-control" min="1" value="3" required>
+
+        <label for="numShelters"><strong>Number of Relief Shelters:</strong></label>
+        <input type="number" id="numShelters" class="form-control" min="1" value="3" required>
+
+        <button type="button" onclick="generateMatrix()" class="btn btn-info w-100">Generate Cost Matrix</button>
+
+        <div id="matrixSection" style="display: none;">
+            <p><strong>Enter Transportation Costs (from each center to each shelter):</strong></p>
+            <div id="matrixInputs" class="matrix-wrapper"></div>
+
+            <label for="supply"><strong>Supply at each center (comma-separated):</strong></label>
+            <textarea id="supply" name="supply" class="form-control" required></textarea>
+
+            <label for="demand"><strong>Demand at each shelter (comma-separated):</strong></label>
+            <textarea id="demand" name="demand" class="form-control" required></textarea>
+
+            <input type="hidden" id="cost_matrix" name="cost_matrix">
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Optimize</button>
+            <button type="button" onclick="resetForm()" class="btn btn-secondary">Reset</button>
+            <button type="button" onclick="prefillExample()" class="btn btn-warning">Load Example</button>
+        </div>
+    </form>
+
+    <div class="footer">
+        Built with ❤️ to reduce food transportation costs and help the needy.
+    </div>
+</div>
+
+<script>
+    function generateMatrix() {
+        const container = document.getElementById('matrixInputs');
+        container.innerHTML = '';  // Clear previous matrix
+
+        const rows = parseInt(document.getElementById('numCenters').value);
+        const cols = parseInt(document.getElementById('numShelters').value);
+        if (!rows || !cols) return;
+
+        let table = document.createElement('table');
+        table.className = 'table table-bordered';
+
+        let thead = table.insertRow();
+        thead.insertCell().outerHTML = "<th>Center \\ Shelter</th>";
+        for (let j = 0; j < cols; j++) {
+            thead.insertCell().outerHTML = `<th>Shelter ${j + 1}</th>`;
+        }
+
+        for (let i = 0; i < rows; i++) {
+            let row = table.insertRow();
+            row.insertCell().outerHTML = `<th>Center ${i + 1}</th>`;
+            for (let j = 0; j < cols; j++) {
+                let cell = row.insertCell();
+                cell.innerHTML = `<input type="number" min="0" id="cell-${i}-${j}" class="form-control" required>`;
+            }
+        }
+
+        container.appendChild(table);
+        document.getElementById('matrixSection').style.display = 'block';
+    }
+
+    function prefillExample() {
+        document.getElementById('numCenters').value = 3;
+        document.getElementById('numShelters').value = 4;
+        generateMatrix();
+
+        const example = [
+            [8, 6, 10, 9],
+            [9, 12, 13, 7],
+            [14, 9, 16, 5]
+        ];
+
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 4; j++) {
+                document.getElementById(`cell-${i}-${j}`).value = example[i][j];
+            }
+        }
+
+        document.getElementById('supply').value = '20,30,25';
+        document.getElementById('demand').value = '10,30,20,15';
+    }
+
+    function resetForm() {
+        document.querySelector("form").reset();
+        document.getElementById('matrixInputs').innerHTML = '';
+        document.getElementById('matrixSection').style.display = 'none';
+    }
+
+    document.querySelector("form").addEventListener("submit", function (e) {
+        const rows = parseInt(document.getElementById('numCenters').value);
+        const cols = parseInt(document.getElementById('numShelters').value);
+        const matrix = [];
+
+        for (let i = 0; i < rows; i++) {
+            const row = [];
+            for (let j = 0; j < cols; j++) {
+                row.push(document.getElementById(`cell-${i}-${j}`).value);
+            }
+            matrix.push(row);
+        }
+
+        document.getElementById('cost_matrix').value = JSON.stringify(matrix);
+    });
+</script>
+</body>
+</html>
